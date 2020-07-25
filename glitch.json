@@ -1,0 +1,12 @@
+{
+  "install": "go build",
+  "start": "./mindful_language",
+  "watch": {
+    "restart": {
+      "include": [
+        "*.go"
+      ]
+    },
+    "throttle": 1000
+  }
+}
