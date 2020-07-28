@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,13 +8,14 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/tkanos/gonfig"
+
+	"github.com/slack-go/slack"
 )
 
 var (
-	db     *sql.DB
 	config Configuration
+	api    *slack.Client
 )
 
 type state struct {
@@ -58,10 +58,12 @@ type Configuration struct {
 	SlackClientID          string
 	SlackClientSecret      string
 	SlackVerificationToken string
+	SlackSigningSecret     string
 	BotToken               string
 	Key1                   string
 	Key2                   string
 	URL                    string
+	PORT                   string
 	RedirectURL            string
 	Patreon                string
 	DbUser                 string
@@ -77,19 +79,18 @@ func routing() {
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/event", http.HandlerFunc(event))
-	mux.Handle("/button", http.HandlerFunc(buttonPressed))
+	mux.Handle("/event", http.HandlerFunc(eventHandler))
+	mux.Handle("/interactive", http.HandlerFunc(interactiveHandler))
+	mux.Handle("/addtrigger", http.HandlerFunc(addTriggerCommand))
 	mux.Handle("/", http.HandlerFunc(redirect))
-	err := http.ListenAndServe(":"+os.Getenv("PORT"), mux)
+	err := http.ListenAndServe(":"+config.PORT, mux)
+	log.Println("Running on port: " + config.PORT)
 	if err != nil {
 		log.Fatal("ListenAndServe error: ", err)
 	}
 
 }
 
-func event(w http.ResponseWriter, r *http.Request) {
-	log.Println("event")
-}
 func buttonPressed(w http.ResponseWriter, r *http.Request) {
 	log.Println("button")
 
@@ -104,9 +105,15 @@ func redirect(w http.ResponseWriter, r *http.Request) {
 }
 
 func init() {
-	configuration := Configuration{}
-	err := gonfig.GetConf("usersettings.json", &configuration)
+	settingsFile := "settings.json"
+	_, err := os.Stat("usersettings.json")
+	if err == nil {
+		settingsFile = "usersettings.json"
+	}
+	err = gonfig.GetConf(settingsFile, &config)
 	if err != nil {
 		log.Fatalln("Could not load configuration")
 	}
+
+	api = slack.New(config.BotToken)
 }

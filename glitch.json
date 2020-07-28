@@ -1,6 +1,6 @@
 {
   "install": "go build",
-  "start": "./mindful_language",
+  "start": "go run .",
   "watch": {
     "restart": {
       "include": [

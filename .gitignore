@@ -4,6 +4,9 @@
 *.dll
 *.so
 *.dylib
+.vscode
+.data
+app
 
 # Test binary, built with `go test -c`
 *.test
@@ -16,4 +19,4 @@
 go
 
 # Configuration
-usersettings.json 
+usersettings.json

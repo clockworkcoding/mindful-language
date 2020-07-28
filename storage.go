@@ -11,8 +11,12 @@ import (
 	"github.com/slack-go/slack"
 )
 
+var (
+	db *sql.DB
+)
+
 func init() {
-	_, err := os.Lstat(config.DbPath)
+	_, err := os.Stat(config.DbPath)
 	if err != nil {
 		log.Println("Database not found, attempting to create database")
 	}
@@ -20,10 +24,42 @@ func init() {
 	if err != nil {
 		log.Fatalln("could not access database: ", err.Error())
 	}
+	createTriggerTable()
+	incrementStartCounter()
+}
+
+func incrementStartCounter() {
+	statement, err := db.Prepare("CREATE TABLE IF NOT EXISTS startcounter(counter INTEGER, version INTEGER)")
+	if err != nil {
+		log.Fatalln("create table error: " + err.Error())
+	}
+	_, err = statement.Exec()
+	if err != nil {
+		log.Fatalln("create table error: " + err.Error())
+	}
+
+	row, err := db.Query("SELECT counter from startcounter")
+	if err != nil {
+		log.Fatalln("Counter read error: " + err.Error())
+	}
+
+	defer row.Close()
+	count := 0
+	if row.Next() {
+		row.Scan(&count)
+		row.Close()
+	} else {
+		db.Exec(fmt.Sprintf("insert into startcounter (counter, version) values (1, 1)"))
+		return
+	}
+	count++
+
+	db.Exec(fmt.Sprintf("update startcounter set counter = %d", count))
+
+	log.Println(fmt.Sprintf("Start count: %d", count))
 }
 
 func saveSlackAuth(oAuth *slack.OAuthV2Response) (err error) {
-
 	if _, err = db.Exec(`CREATE TABLE IF NOT EXISTS slack_auth (
 		id serial,
 		team varchar(200),

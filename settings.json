@@ -1,0 +1,16 @@
+{
+    "SlackClientID":"",
+    "SlackClientSecret":"",
+    "SlackVerificationToken":"",
+    "SlackSigningSecret":"",
+    "BotToken":"",
+    "Key1":"",
+    "Key2":"",
+    "URL":"",
+    "PORT":"",
+    "RedirectURL":"",
+    "Patreon":"",
+    "DbUser":"",
+    "DbPass":"",
+    "DbPath":""
+  }
