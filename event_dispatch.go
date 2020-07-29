@@ -37,7 +37,9 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		case *slackevents.AppMentionEvent:
 			api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false))
 		case *slackevents.MessageEvent:
-			handleEvent(event, ev)
+			if ev.BotID == "" {
+				handleEvent(event, ev)
+			}
 		}
 	}
 }

@@ -25,6 +25,7 @@ func init() {
 		log.Fatalln("could not access database: ", err.Error())
 	}
 	createTriggerTable()
+	createUserSettingsTable()
 	incrementStartCounter()
 }
 

@@ -46,3 +46,8 @@ func insertTrigger(teamid string, newTrigger trigger) {
 		return
 	}
 }
+
+func createTriggerTable() {
+	statement, _ := db.Prepare("CREATE TABLE IF NOT EXISTS triggers (id INTEGER PRIMARY KEY AUTOINCREMENT, teamid TEXT, trigger TEXTs, enabled INTEGER)")
+	statement.Exec()
+}

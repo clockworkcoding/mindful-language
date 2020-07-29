@@ -22,7 +22,6 @@ type trigger struct {
 }
 
 func addTriggerCommand(w http.ResponseWriter, r *http.Request) {
-
 	err := verifySigningSecret(r)
 	if err != nil {
 		fmt.Printf(err.Error())
@@ -46,7 +45,6 @@ func addTriggerCommand(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(b)
-
 }
 
 func showTriggerModal(triggerID string) {
@@ -62,7 +60,6 @@ func showTriggerModal(triggerID string) {
 	triggerText := slack.NewTextBlockObject("plain_text", "trigger Words (comma sepearted variations)", false, false)
 	triggerPlaceholder := slack.NewTextBlockObject("plain_text", "toaster, toasters", false, false)
 	triggerElement := slack.NewPlainTextInputBlockElement(triggerPlaceholder, "trigger_list")
-	// Notice that blockID is a unique identifier for a block
 	trigger := slack.NewInputBlock("trigger_list", triggerText, triggerElement)
 
 	explanationText := slack.NewTextBlockObject("plain_text", "Response", false, false)
@@ -81,10 +78,10 @@ func showTriggerModal(triggerID string) {
 	ephemeralTxt := slack.NewTextBlockObject("plain_text", "in the channel, but only you see it", false, false)
 	dmTxt := slack.NewTextBlockObject("plain_text", "in a direct message", false, false)
 
-	threadOpt := slack.NewOptionBlockObject(strconv.Itoa(thread), threadTxt)
-	channelOpt := slack.NewOptionBlockObject(strconv.Itoa(channel), channelTxt)
-	ephemeralOpt := slack.NewOptionBlockObject(strconv.Itoa(ephemeral), ephemeralTxt)
-	dmOpt := slack.NewOptionBlockObject(strconv.Itoa(directMessage), dmTxt)
+	threadOpt := slack.NewOptionBlockObject(strconv.Itoa(threadResponse), threadTxt)
+	channelOpt := slack.NewOptionBlockObject(strconv.Itoa(channelResponse), channelTxt)
+	ephemeralOpt := slack.NewOptionBlockObject(strconv.Itoa(ephemeralResponse), ephemeralTxt)
+	dmOpt := slack.NewOptionBlockObject(strconv.Itoa(directMessageResponse), dmTxt)
 
 	responseTypeOption := slack.NewOptionsSelectBlockElement("static_select", manageTxt, "response_type", threadOpt, channelOpt, ephemeralOpt, dmOpt)
 	responseType := slack.NewInputBlock("response_type", manageTxt, responseTypeOption)
@@ -112,14 +109,7 @@ func showTriggerModal(triggerID string) {
 	}
 }
 
-func handleAddTriggerModalAction(w http.ResponseWriter, r *http.Request) {
-	var i slack.InteractionCallback
-	err := json.Unmarshal([]byte(r.FormValue("payload")), &i)
-	if err != nil {
-		fmt.Printf(err.Error())
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+func handleAddTriggerModalAction(i slack.InteractionCallback) {
 
 	triggerString := i.View.State.Values["trigger_list"]["trigger_list"].Value
 	explanation := i.View.State.Values["explanation"]["explanation"].Value
@@ -158,9 +148,4 @@ func handleAddTriggerModalAction(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error posting: ", err)
 		return
 	}
-}
-
-func createTriggerTable() {
-	statement, _ := db.Prepare("CREATE TABLE IF NOT EXISTS triggers (id INTEGER PRIMARY KEY AUTOINCREMENT, teamid TEXT, trigger TEXTs, enabled INTEGER)")
-	statement.Exec()
 }

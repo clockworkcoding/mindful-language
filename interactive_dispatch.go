@@ -27,11 +27,16 @@ func interactiveHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Write([]byte(""))
 
-	switch interaction.View.CallbackID {
-	case "trigger_modal":
-		handleAddTriggerModalAction(w, r)
+	log.Println(interaction.Type)
+	switch {
+	case interaction.Type == "view_submission" && interaction.View.CallbackID == "trigger_modal":
+		handleAddTriggerModalAction(interaction)
+	case interaction.Type == "block_actions" && interaction.ActionCallback.BlockActions[0].ActionID == "user_settings":
+		handleUserSettingAction(interaction)
+	case interaction.Type == "block_actions" && interaction.ActionCallback.BlockActions[0].BlockID == "user_setting_selection":
+		handleUserSettingSelection(interaction)
 	default:
-		log.Println("looking for callback: " + interaction.CallbackID)
+		log.Println("looking for type: " + interaction.Type)
 	}
 
 }
