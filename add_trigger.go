@@ -13,7 +13,7 @@ import (
 
 type trigger struct {
 	Triggers            []string
-	Explanation         string
+	Explanations        []string
 	DefaultResponseType int
 	Creator             string
 	Editor              string
@@ -67,7 +67,12 @@ func showTriggerModal(triggerID string) {
 
 	explanationText := slack.NewTextBlockObject("plain_text", "Response", false, false)
 	explanationPlaceholder := slack.NewTextBlockObject("plain_text", "The proper term is Cylon, please let them live peacefully among you.", false, false)
-	explanationElement := slack.NewPlainTextInputBlockElement(explanationPlaceholder, "explanation")
+	explanationElement := &slack.PlainTextInputBlockElement{
+		Type:        slack.METPlainTextInput,
+		ActionID:    "explanation",
+		Placeholder: explanationPlaceholder,
+		Multiline:   true,
+	}
 	explanation := slack.NewInputBlock("explanation", explanationText, explanationElement)
 
 	manageTxt := slack.NewTextBlockObject("plain_text", "pick a default response type", true, false)
@@ -124,14 +129,14 @@ func handleAddTriggerModalAction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	triggerList := strings.Split(triggerString, ",")
+	triggerList := strings.Split(strings.ToLower(triggerString), ",")
 	for index, triggerWord := range triggerList {
 		triggerList[index] = strings.TrimSpace(triggerWord)
 	}
 
 	newTrigger := trigger{
 		Triggers:            triggerList,
-		Explanation:         explanation,
+		Explanations:        strings.Split(explanation, "\n"),
 		Creator:             i.User.Name,
 		DefaultResponseType: responseType,
 		Enabled:             true,
@@ -151,22 +156,6 @@ func handleAddTriggerModalAction(w http.ResponseWriter, r *http.Request) {
 	_, err = api.PostEphemeral(imChannel.Conversation.ID, msg)
 	if err != nil {
 		log.Println("Error posting: ", err)
-		return
-	}
-}
-
-func insertTrigger(teamid string, newTrigger trigger) {
-	triggerJSON, _ := json.Marshal(newTrigger)
-
-	statement, err := db.Prepare("INSERT INTO triggers (teamid, trigger, enabled) values(?,?,?)")
-	if err != nil {
-		log.Output(0, fmt.Sprintf("Triggers storage Err: %s", err.Error()))
-		return
-	}
-
-	_, err = statement.Exec(teamid, triggerJSON, newTrigger.Enabled)
-	if err != nil {
-		log.Output(0, fmt.Sprintf("Triggers storage Err: %s", err.Error()))
 		return
 	}
 }

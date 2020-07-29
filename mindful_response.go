@@ -1,9 +1,10 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"log"
+	"math/rand"
+	"strings"
+	"time"
 
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
@@ -11,16 +12,19 @@ import (
 
 func handleEvent(event slackevents.EventsAPIEvent, messageEvent *slackevents.MessageEvent) {
 	teamTriggers := getTriggers(event.TeamID, true)
+	rand.Seed(time.Now().UnixNano())
+	msgText := strings.ToLower(messageEvent.Text)
 	for _, t := range teamTriggers {
 		for _, tword := range t.Triggers {
-			if containsTrigger(messageEvent.Text, tword) {
+			if containsTrigger(msgText, tword) {
+				num := rand.Intn(len(t.Explanations))
 
-				headerText := slack.NewTextBlockObject("mrkdwn", t.Explanation, false, false)
+				headerText := slack.NewTextBlockObject("mrkdwn", t.Explanations[num], false, false)
 				headerSection := slack.NewSectionBlock(headerText, nil, nil)
 
-				footerString := "Created by @" + t.Creator
+				footerString := "Triggered by \"" + tword + "\". Created by " + t.Creator
 				if t.Editor != "" {
-					footerString += " and last edited by @" + t.Editor
+					footerString += " and last edited by " + t.Editor
 				}
 				footerText := slack.NewTextBlockObject("mrkdwn", footerString, false, false)
 				footer := slack.NewContextBlock("", []slack.MixedElement{footerText}...)
@@ -42,14 +46,16 @@ func handleEvent(event slackevents.EventsAPIEvent, messageEvent *slackevents.Mes
 						return
 					}
 				case channel:
-					//channel
-					_, _, err := api.PostMessage(messageEvent.Channel, blocks)
+					options := []slack.MsgOption{blocks}
+					if messageEvent.ThreadTimeStamp != "" {
+						options = append(options, slack.MsgOptionTS(messageEvent.TimeStamp))
+					}
+					_, _, err := api.PostMessage(messageEvent.Channel, options...)
 					if err != nil {
 						log.Println("Error posting: ", err)
 						return
 					}
 				case thread:
-					log.Println(messageEvent.TimeStamp, messageEvent.ThreadTimeStamp)
 					//thread
 					_, _, err := api.PostMessage(messageEvent.Channel, slack.MsgOptionTS(messageEvent.TimeStamp), blocks)
 					if err != nil {
@@ -75,29 +81,4 @@ func handleEvent(event slackevents.EventsAPIEvent, messageEvent *slackevents.Mes
 			}
 		}
 	}
-}
-
-func getTriggers(teamID string, enabled bool) (triggers []trigger) {
-	enabledString := ""
-	if enabled {
-		enabledString = " enabled = 1 AND "
-	}
-	rows, err := db.Query(fmt.Sprintf("SELECT id, trigger FROM triggers WHERE %s teamid = \"%s\"", enabledString, teamID))
-
-	if err != nil {
-		log.Output(0, fmt.Sprintf("Triggers storage Err: %s", err.Error()))
-		return
-	}
-
-	defer rows.Close()
-	var jsonTrigger string
-	var id int
-	for rows.Next() {
-		var rowTrigger trigger
-		rows.Scan(&id, &jsonTrigger)
-		json.Unmarshal([]byte(jsonTrigger), &rowTrigger)
-		rowTrigger.ID = id
-		triggers = append(triggers, rowTrigger)
-	}
-	return
 }
