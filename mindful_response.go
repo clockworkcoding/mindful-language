@@ -38,8 +38,8 @@ func handleEvent(event slackevents.EventsAPIEvent, messageEvent *slackevents.Mes
 
 				blocks := slack.MsgOptionBlocks(headerSection, footer, buttons)
 				unfurlLinks := slack.MsgOptionEnableLinkUnfurl()
-				unfurlMedia := slack.MsgOptionDisableMediaUnfurl()
-				options := []slack.MsgOption{blocks, unfurlLinks, unfurlMedia}
+				text := slack.MsgOptionText(t.Explanations[num], false)
+				options := []slack.MsgOption{text, blocks, unfurlLinks}
 
 				if responseType == 0 {
 					responseType = t.DefaultResponseType
