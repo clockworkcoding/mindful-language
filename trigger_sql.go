@@ -94,6 +94,17 @@ func deleteTrigger(triggerID int) {
 		log.Output(0, fmt.Sprintf("Triggers storage Err: %s", err.Error()))
 		return
 	}
+	statement, err = db.Prepare("delete from user_settings where triggerid = ?")
+	if err != nil {
+		log.Output(0, fmt.Sprintf("Triggers storage Err: %s", err.Error()))
+		return
+	}
+
+	_, err = statement.Exec(triggerID)
+	if err != nil {
+		log.Output(0, fmt.Sprintf("Triggers storage Err: %s", err.Error()))
+		return
+	}
 }
 
 func createTriggerTable() {
