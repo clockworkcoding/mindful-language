@@ -198,7 +198,7 @@ func handleEditTriggerModalSave(i slack.InteractionCallback) {
 		return
 	}
 	var enabled bool
-	log.Println("enabled: ", i.View.State.Values["enabled"]["enabled"].SelectedOption.Value)
+
 	if len(i.View.State.Values["enabled"]["enabled"].SelectedOptions) > 0 {
 		enabled = true
 	}
@@ -206,6 +206,7 @@ func handleEditTriggerModalSave(i slack.InteractionCallback) {
 		deleteTrigger(triggerID)
 		return
 	}
+	oldTrigger := getTrigger(triggerID)
 
 	triggerList := strings.Split(strings.ToLower(triggerString), ",")
 	for index, triggerWord := range triggerList {
@@ -216,7 +217,8 @@ func handleEditTriggerModalSave(i slack.InteractionCallback) {
 		ID:                  triggerID,
 		Triggers:            triggerList,
 		Explanations:        strings.Split(explanation, "\n"),
-		Creator:             i.User.Name,
+		Creator:             oldTrigger.Creator,
+		Editor:              i.User.Name,
 		DefaultResponseType: responseType,
 		Enabled:             enabled,
 	}
