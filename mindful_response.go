@@ -11,7 +11,7 @@ import (
 	"github.com/slack-go/slack/slackevents"
 )
 
-func handleEvent(event slackevents.EventsAPIEvent, messageEvent *slackevents.MessageEvent) {
+func handleMessageEvent(event slackevents.EventsAPIEvent, messageEvent *slackevents.MessageEvent) {
 	teamTriggers := getTriggers(event.TeamID, true)
 	userSettings := getUserSettings(messageEvent.User)
 	rand.Seed(time.Now().UnixNano())

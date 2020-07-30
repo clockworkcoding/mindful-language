@@ -25,7 +25,7 @@ func editTriggerCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	showTriggerModal(s.TriggerID)
+	showEditTriggerModal(s.TriggerID, s.TeamID)
 
 	params := &slack.Msg{Text: "Okay, let's set one up"}
 	b, err := json.Marshal(params)
@@ -37,28 +37,78 @@ func editTriggerCommand(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-func showEditTriggerModal(triggerID string) {
+func showEditTriggerModal(triggerID string, teamID string) {
+	// Create a ModalViewRequest with a header and two inputs
+	titleText := slack.NewTextBlockObject("plain_text", "Edit a response", false, false)
+	closeText := slack.NewTextBlockObject("plain_text", "Cancel", false, false)
+	submitText := slack.NewTextBlockObject("plain_text", "Edit", false, false)
+
+	manageTxt := slack.NewTextBlockObject("plain_text", "Pick a response to edit", true, false)
+	var options []*slack.OptionBlockObject
+	triggers := getTriggers(teamID, false)
+	for _, t := range triggers {
+		text := t.Triggers[0] + " | " + t.Explanations[0]
+		length := 74
+		if len(text) < 74 {
+			length = len(text)
+		}
+		triggerTxt := slack.NewTextBlockObject("plain_text", text[:length], true, false)
+		triggerOpt := slack.NewOptionBlockObject(strconv.Itoa(t.ID), triggerTxt)
+		options = append(options, triggerOpt)
+	}
+	triggerSelectOption := slack.NewOptionsSelectBlockElement("static_select", manageTxt, "trigger", options...)
+	triggerSelect := slack.NewInputBlock("trigger", manageTxt, triggerSelectOption)
+
+	blocks := slack.Blocks{
+		BlockSet: []slack.Block{
+			triggerSelect,
+		},
+	}
+
+	var modalRequest slack.ModalViewRequest
+	modalRequest.Type = slack.ViewType("modal")
+	modalRequest.Title = titleText
+	modalRequest.Close = closeText
+	modalRequest.Submit = submitText
+	modalRequest.Blocks = blocks
+	modalRequest.CallbackID = "trigger_edit_modal"
+
+	_, err := api.OpenView(triggerID, modalRequest)
+	if err != nil {
+		fmt.Printf("Error opening view: %s", err)
+	}
+}
+
+func handleEditTriggerModalSelect(i slack.InteractionCallback, w http.ResponseWriter, r *http.Request) {
+	triggerID, err := strconv.Atoi(i.View.State.Values["trigger"]["trigger"].SelectedOption.Value)
+	if err != nil {
+		fmt.Printf(err.Error())
+		return
+	}
+	trigger := getTrigger(triggerID)
+	triggers := strings.Join(trigger.Triggers, ", ")
+	explanations := strings.Join(trigger.Explanations, "\n")
 
 	// Create a ModalViewRequest with a header and two inputs
-	titleText := slack.NewTextBlockObject("plain_text", "Add a response", false, false)
+	titleText := slack.NewTextBlockObject("plain_text", "Update response", false, false)
 	closeText := slack.NewTextBlockObject("plain_text", "Cancel", false, false)
 	submitText := slack.NewTextBlockObject("plain_text", "Submit", false, false)
-
-	headerText := slack.NewTextBlockObject("mrkdwn", "Please enter your name", false, false)
-	headerSection := slack.NewSectionBlock(headerText, nil, nil)
 
 	triggerText := slack.NewTextBlockObject("plain_text", "trigger Words (comma sepearted variations)", false, false)
 	triggerPlaceholder := slack.NewTextBlockObject("plain_text", "toaster, toasters", false, false)
 	triggerElement := slack.NewPlainTextInputBlockElement(triggerPlaceholder, "trigger_list")
-	trigger := slack.NewInputBlock("trigger_list", triggerText, triggerElement)
+	triggerElement.InitialValue = triggers
+
+	triggerBlock := slack.NewInputBlock("trigger_list", triggerText, triggerElement)
 
 	explanationText := slack.NewTextBlockObject("plain_text", "Response", false, false)
 	explanationPlaceholder := slack.NewTextBlockObject("plain_text", "The proper term is Cylon, please let them live peacefully among you.", false, false)
 	explanationElement := &slack.PlainTextInputBlockElement{
-		Type:        slack.METPlainTextInput,
-		ActionID:    "explanation",
-		Placeholder: explanationPlaceholder,
-		Multiline:   true,
+		Type:         slack.METPlainTextInput,
+		ActionID:     "explanation",
+		Placeholder:  explanationPlaceholder,
+		InitialValue: explanations,
+		Multiline:    true,
 	}
 	explanation := slack.NewInputBlock("explanation", explanationText, explanationElement)
 
@@ -74,14 +124,48 @@ func showEditTriggerModal(triggerID string) {
 	dmOpt := slack.NewOptionBlockObject(strconv.Itoa(directMessageResponse), dmTxt)
 
 	responseTypeOption := slack.NewOptionsSelectBlockElement("static_select", manageTxt, "response_type", threadOpt, channelOpt, ephemeralOpt, dmOpt)
+	var selectedOption *slack.OptionBlockObject
+	switch trigger.DefaultResponseType {
+	case threadResponse:
+		selectedOption = threadOpt
+	case channelResponse:
+		selectedOption = channelOpt
+	case ephemeralResponse:
+		selectedOption = ephemeralOpt
+	case directMessageResponse:
+		selectedOption = dmOpt
+	}
+	responseTypeOption.InitialOption = selectedOption
 	responseType := slack.NewInputBlock("response_type", manageTxt, responseTypeOption)
+
+	enabledTxt := slack.NewTextBlockObject("plain_text", "Enabled", false, false)
+	enabledOpt := slack.NewOptionBlockObject("true", enabledTxt)
+	enabledGroup := slack.NewCheckboxGroupsBlockElement("enabled", enabledOpt)
+	if trigger.Enabled {
+		enabledGroup.InitialOptions = enabledGroup.Options
+	}
+	enabledBlock := slack.NewInputBlock("enabled", enabledTxt, enabledGroup)
+	enabledBlock.Optional = true
+
+	deleteTxt := slack.NewTextBlockObject("plain_text", "Delete", false, false)
+	deleteOpt := slack.NewOptionBlockObject("true", deleteTxt)
+	deleteGroup := slack.NewCheckboxGroupsBlockElement("delete", deleteOpt)
+
+	confirmTitleTxt := slack.NewTextBlockObject("plain_text", "Delete", false, false)
+	confirmTxt := slack.NewTextBlockObject("plain_text", "This cannot be undone after saving. Are you sure?", false, false)
+	confirmCancelTxt := slack.NewTextBlockObject("plain_text", "Cancel", false, false)
+	confirmApproveTxt := slack.NewTextBlockObject("plain_text", "Delete", false, false)
+	deleteGroup.Confirm = slack.NewConfirmationBlockObject(confirmTitleTxt, confirmTxt, confirmApproveTxt, confirmCancelTxt)
+	deleteBlock := slack.NewInputBlock("delete", deleteTxt, deleteGroup)
+	deleteBlock.Optional = true
 
 	blocks := slack.Blocks{
 		BlockSet: []slack.Block{
-			headerSection,
-			trigger,
+			triggerBlock,
 			explanation,
 			responseType,
+			enabledBlock,
+			deleteBlock,
 		},
 	}
 
@@ -91,21 +175,35 @@ func showEditTriggerModal(triggerID string) {
 	modalRequest.Close = closeText
 	modalRequest.Submit = submitText
 	modalRequest.Blocks = blocks
-	modalRequest.CallbackID = "trigger_modal"
+	modalRequest.CallbackID = "trigger_update_save_modal"
+	modalRequest.PrivateMetadata = strconv.Itoa(trigger.ID)
 
-	_, err := api.OpenView(triggerID, modalRequest)
+	response := slack.NewUpdateViewSubmissionResponse(&modalRequest)
+	responseJSON, _ := json.Marshal(response)
+	w.Write(responseJSON)
+	_, err = api.UpdateView(modalRequest, "", i.View.Hash, i.View.ID)
+	//_, err := api.OpenView(i.TriggerID, modalRequest)
 	if err != nil {
 		fmt.Printf("Error opening view: %s", err)
 	}
 }
 
-func handleEditTriggerModalAction(i slack.InteractionCallback) {
-
+func handleEditTriggerModalSave(i slack.InteractionCallback) {
+	triggerID, _ := strconv.Atoi(i.View.PrivateMetadata)
 	triggerString := i.View.State.Values["trigger_list"]["trigger_list"].Value
 	explanation := i.View.State.Values["explanation"]["explanation"].Value
 	responseType, err := strconv.Atoi(i.View.State.Values["response_type"]["response_type"].SelectedOption.Value)
 	if err != nil {
 		fmt.Printf(err.Error())
+		return
+	}
+	var enabled bool
+	log.Println("enabled: ", i.View.State.Values["enabled"]["enabled"].SelectedOption.Value)
+	if len(i.View.State.Values["enabled"]["enabled"].SelectedOptions) > 0 {
+		enabled = true
+	}
+	if len(i.View.State.Values["delete"]["delete"].SelectedOptions) > 0 {
+		deleteTrigger(triggerID)
 		return
 	}
 
@@ -115,14 +213,15 @@ func handleEditTriggerModalAction(i slack.InteractionCallback) {
 	}
 
 	newTrigger := trigger{
+		ID:                  triggerID,
 		Triggers:            triggerList,
 		Explanations:        strings.Split(explanation, "\n"),
 		Creator:             i.User.Name,
 		DefaultResponseType: responseType,
-		Enabled:             true,
+		Enabled:             enabled,
 	}
 
-	insertTrigger(i.Team.ID, newTrigger)
+	updateTrigger(newTrigger)
 
 	msg := fmt.Sprintf("I saved the response for %s and variants", newTrigger.Triggers[0])
 
@@ -138,4 +237,5 @@ func handleEditTriggerModalAction(i slack.InteractionCallback) {
 		log.Println("Error posting: ", err)
 		return
 	}
+
 }

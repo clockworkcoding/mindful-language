@@ -54,9 +54,6 @@ func showTriggerModal(triggerID string) {
 	closeText := slack.NewTextBlockObject("plain_text", "Cancel", false, false)
 	submitText := slack.NewTextBlockObject("plain_text", "Submit", false, false)
 
-	headerText := slack.NewTextBlockObject("mrkdwn", "Please enter your name", false, false)
-	headerSection := slack.NewSectionBlock(headerText, nil, nil)
-
 	triggerText := slack.NewTextBlockObject("plain_text", "trigger Words (comma sepearted variations)", false, false)
 	triggerPlaceholder := slack.NewTextBlockObject("plain_text", "toaster, toasters", false, false)
 	triggerElement := slack.NewPlainTextInputBlockElement(triggerPlaceholder, "trigger_list")
@@ -88,7 +85,6 @@ func showTriggerModal(triggerID string) {
 
 	blocks := slack.Blocks{
 		BlockSet: []slack.Block{
-			headerSection,
 			trigger,
 			explanation,
 			responseType,

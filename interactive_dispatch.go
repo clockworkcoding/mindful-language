@@ -31,10 +31,18 @@ func interactiveHandler(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case interaction.Type == "view_submission" && interaction.View.CallbackID == "trigger_modal":
 		handleAddTriggerModalAction(interaction)
+	case interaction.Type == "view_submission" && interaction.View.CallbackID == "trigger_edit_modal":
+		handleEditTriggerModalSelect(interaction, w, r)
+	case interaction.Type == "view_submission" && interaction.View.CallbackID == "trigger_update_save_modal":
+		handleEditTriggerModalSave(interaction)
 	case interaction.Type == "block_actions" && interaction.ActionCallback.BlockActions[0].ActionID == "user_settings":
 		handleUserSettingAction(interaction)
 	case interaction.Type == "block_actions" && interaction.ActionCallback.BlockActions[0].BlockID == "user_setting_selection":
 		handleUserSettingSelection(interaction)
+	case interaction.Type == "block_actions" && interaction.ActionCallback.BlockActions[0].ActionID == "add_response":
+		showTriggerModal(interaction.TriggerID)
+	case interaction.Type == "block_actions" && interaction.ActionCallback.BlockActions[0].ActionID == "edit_response":
+		showEditTriggerModal(interaction.TriggerID, interaction.Team.ID)
 	default:
 		log.Println("looking for type: " + interaction.Type)
 	}

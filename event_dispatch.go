@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 )
 
@@ -35,10 +34,10 @@ func eventHandler(w http.ResponseWriter, r *http.Request) {
 		innerEvent := event.InnerEvent
 		switch ev := innerEvent.Data.(type) {
 		case *slackevents.AppMentionEvent:
-			api.PostMessage(ev.Channel, slack.MsgOptionText("Yes, hello.", false))
+			handleMentionEvent(event, ev)
 		case *slackevents.MessageEvent:
 			if ev.BotID == "" {
-				handleEvent(event, ev)
+				handleMessageEvent(event, ev)
 			}
 		}
 	}

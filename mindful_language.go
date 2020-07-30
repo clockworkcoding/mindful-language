@@ -82,6 +82,7 @@ func routing() {
 	mux.Handle("/event", http.HandlerFunc(eventHandler))
 	mux.Handle("/interactive", http.HandlerFunc(interactiveHandler))
 	mux.Handle("/addtrigger", http.HandlerFunc(addTriggerCommand))
+	mux.Handle("/edittrigger", http.HandlerFunc(editTriggerCommand))
 	mux.Handle("/", http.HandlerFunc(redirect))
 	err := http.ListenAndServe(":"+config.PORT, mux)
 	log.Println("Running on port: " + config.PORT)
