@@ -69,8 +69,6 @@ func isSeparator(r rune) bool {
 			return false
 		case 'A' <= r && r <= 'Z':
 			return false
-		case r == '_':
-			return false
 		}
 		return true
 	}

@@ -37,6 +37,9 @@ func handleEvent(event slackevents.EventsAPIEvent, messageEvent *slackevents.Mes
 				buttons := slack.NewActionBlock("triggered_buttons", settingsBtn)
 
 				blocks := slack.MsgOptionBlocks(headerSection, footer, buttons)
+				unfurlLinks := slack.MsgOptionEnableLinkUnfurl()
+				unfurlMedia := slack.MsgOptionDisableMediaUnfurl()
+				options := []slack.MsgOption{blocks, unfurlLinks, unfurlMedia}
 
 				if responseType == 0 {
 					responseType = t.DefaultResponseType
@@ -45,13 +48,12 @@ func handleEvent(event slackevents.EventsAPIEvent, messageEvent *slackevents.Mes
 				switch responseType {
 				case ephemeralResponse:
 					//channel only visible to you
-					_, err := api.PostEphemeral(messageEvent.Channel, messageEvent.User, blocks)
+					_, err := api.PostEphemeral(messageEvent.Channel, messageEvent.User, options...)
 					if err != nil {
 						log.Println("Error posting: ", err)
 						return
 					}
 				case channelResponse:
-					options := []slack.MsgOption{blocks}
 					if messageEvent.ThreadTimeStamp != "" {
 						options = append(options, slack.MsgOptionTS(messageEvent.TimeStamp))
 					}
@@ -62,7 +64,8 @@ func handleEvent(event slackevents.EventsAPIEvent, messageEvent *slackevents.Mes
 					}
 				case threadResponse:
 					//thread
-					_, _, err := api.PostMessage(messageEvent.Channel, slack.MsgOptionTS(messageEvent.TimeStamp), blocks)
+					options = append(options, slack.MsgOptionTS(messageEvent.TimeStamp))
+					_, _, err := api.PostMessage(messageEvent.Channel, options...)
 					if err != nil {
 						log.Println("Error posting: ", err)
 						return
@@ -76,7 +79,7 @@ func handleEvent(event slackevents.EventsAPIEvent, messageEvent *slackevents.Mes
 						return
 					}
 
-					_, _, err = api.PostMessage(imChannel.Conversation.ID, blocks)
+					_, _, err = api.PostMessage(imChannel.Conversation.ID, options...)
 					if err != nil {
 						log.Println("Error posting: ", err)
 						return

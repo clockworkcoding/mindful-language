@@ -11,17 +11,7 @@ import (
 	"github.com/slack-go/slack"
 )
 
-type trigger struct {
-	Triggers            []string
-	Explanations        []string
-	DefaultResponseType int
-	Creator             string
-	Editor              string
-	ID                  int
-	Enabled             bool
-}
-
-func addTriggerCommand(w http.ResponseWriter, r *http.Request) {
+func editTriggerCommand(w http.ResponseWriter, r *http.Request) {
 	err := verifySigningSecret(r)
 	if err != nil {
 		fmt.Printf(err.Error())
@@ -47,7 +37,7 @@ func addTriggerCommand(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-func showTriggerModal(triggerID string) {
+func showEditTriggerModal(triggerID string) {
 
 	// Create a ModalViewRequest with a header and two inputs
 	titleText := slack.NewTextBlockObject("plain_text", "Add a response", false, false)
@@ -109,7 +99,7 @@ func showTriggerModal(triggerID string) {
 	}
 }
 
-func handleAddTriggerModalAction(i slack.InteractionCallback) {
+func handleEditTriggerModalAction(i slack.InteractionCallback) {
 
 	triggerString := i.View.State.Values["trigger_list"]["trigger_list"].Value
 	explanation := i.View.State.Values["explanation"]["explanation"].Value
