@@ -54,12 +54,12 @@ func showTriggerModal(triggerID string) {
 	closeText := slack.NewTextBlockObject("plain_text", "Cancel", false, false)
 	submitText := slack.NewTextBlockObject("plain_text", "Submit", false, false)
 
-	triggerText := slack.NewTextBlockObject("plain_text", "trigger Words (comma sepearted variations)", false, false)
+	triggerText := slack.NewTextBlockObject("plain_text", "Trigger Words (comma sepearted variations)", false, false)
 	triggerPlaceholder := slack.NewTextBlockObject("plain_text", "toaster, toasters", false, false)
 	triggerElement := slack.NewPlainTextInputBlockElement(triggerPlaceholder, "trigger_list")
 	trigger := slack.NewInputBlock("trigger_list", triggerText, triggerElement)
 
-	explanationText := slack.NewTextBlockObject("plain_text", "Response", false, false)
+  explanationText := slack.NewTextBlockObject("plain_text", "Responses (seperated by new lines, randomly chosen)", false, false)
 	explanationPlaceholder := slack.NewTextBlockObject("plain_text", "The proper term is Cylon, please let them live peacefully among you.", false, false)
 	explanationElement := &slack.PlainTextInputBlockElement{
 		Type:        slack.METPlainTextInput,
