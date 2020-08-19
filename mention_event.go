@@ -9,7 +9,7 @@ import (
 
 func handleMentionEvent(event slackevents.EventsAPIEvent, messageEvent *slackevents.AppMentionEvent) {
 
-	headerText := slack.NewTextBlockObject("mrkdwn", "Hi there!  \nAnybody can add or edit responses with the buttons below. You can also disable or delete responses in the edit menu. You might see some connection error messages because @max is still working on me, but it should all work ok! \nIf you want to see this again, just tag me in any channel! \nWhat would you like to do?", false, false)
+	headerText := slack.NewTextBlockObject("mrkdwn", "Hi there!  \nAnybody can add or edit responses with the buttons below. You can also disable or delete responses in the edit menu. You might see some connection error messages because @max is still working on me, but it should all work ok! \nIf you want to test out responses, #response-bot is a great place for it.\nTo see this again, just tag me in any channel!", false, false)
 	headerSection := slack.NewSectionBlock(headerText, nil, nil)
 
 	addResponseBtnTxt := slack.NewTextBlockObject("plain_text", "add a response", false, false)
