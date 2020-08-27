@@ -55,7 +55,7 @@ func handleMessageEvent(event slackevents.EventsAPIEvent, messageEvent *slackeve
 					}
 				case channelResponse:
 					if messageEvent.ThreadTimeStamp != "" {
-						options = append(options, slack.MsgOptionTS(messageEvent.TimeStamp))
+						options = append(options, slack.MsgOptionTS(messageEvent.ThreadTimeStamp))
 					}
 					_, _, err := api.PostMessage(messageEvent.Channel, options...)
 					if err != nil {
@@ -64,7 +64,11 @@ func handleMessageEvent(event slackevents.EventsAPIEvent, messageEvent *slackeve
 					}
 				case threadResponse:
 					//thread
-					options = append(options, slack.MsgOptionTS(messageEvent.TimeStamp))
+					if messageEvent.ThreadTimeStamp != "" {
+						options = append(options, slack.MsgOptionTS(messageEvent.ThreadTimeStamp))
+					} else {
+						options = append(options, slack.MsgOptionTS(messageEvent.TimeStamp))
+					}
 					_, _, err := api.PostMessage(messageEvent.Channel, options...)
 					if err != nil {
 						log.Println("Error posting: ", err)
