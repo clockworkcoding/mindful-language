@@ -28,12 +28,12 @@ func handleUserSettingAction(payload slack.InteractionCallback) {
 	directMessageBtn := slack.NewButtonBlockElement(strconv.Itoa(directMessageResponse), action.Value, directMessageBtnTxt)
 	noneBtnTxt := slack.NewTextBlockObject("plain_text", "don't show", false, false)
 	noneBtn := slack.NewButtonBlockElement(strconv.Itoa(noResponse), action.Value, noneBtnTxt)
-	noneBtnTxt := slack.NewTextBlockObject("plain_text", "don't show", false, false)
-	noneBtn := slack.NewButtonBlockElement(strconv.Itoa(noResponse), action.Value, noneBtnTxt)
 	buttons := slack.NewActionBlock("user_setting_selection", channelBtn, ephemeralBtn, threadBtn, directMessageBtn, noneBtn)
-  if paylod.User.ID == "DG5DH1EFM"{
-	  deleteBtnTxt := slack.NewTextBlockObject("plain_text", "don't show", false, false)
-	  deleteBtn := slack.NewButtonBlockElement(strconv.Itoa(threadResponse), action.Value, deleteBtnTxt)
+ log.Println("UserId: ", payload.User.ID)
+  if payload.User.ID == "UG5DH19EX"{
+	  deleteBtnTxt := slack.NewTextBlockObject("plain_text", "delete this instance", false, false)
+	  deleteBtn := slack.NewButtonBlockElement(deleteInstance, payload.ResponseURL, deleteBtnTxt)
+	  buttons = slack.NewActionBlock("user_setting_selection", channelBtn, ephemeralBtn, threadBtn, directMessageBtn, noneBtn, deleteBtn)
   }
 	blocks := slack.MsgOptionBlocks(headerSection, buttons)
 	options := []slack.MsgOption{blocks}
@@ -57,6 +57,14 @@ func handleUserSettingSelection(payload slack.InteractionCallback) {
 		TriggerID:    triggerID,
 		UserID:       payload.User.ID,
 	}
+  if responseType == deleteInstance{
+    
+	_, err := api.PostEphemeral(payload.Container.ChannelID, payload.User.ID, slack.MsgOptionText(":heavy_check_mark:", false), slack.MsgOptionDeleteOriginal(payload.ResponseURL))
+	if err != nil {
+		log.Println("Error posting: ", err)
+		return
+	}
+  }
 	insertUserSetting(setting)
 
 	_, err := api.PostEphemeral(payload.Container.ChannelID, payload.User.ID, slack.MsgOptionText(":heavy_check_mark:", false), slack.MsgOptionDeleteOriginal(payload.ResponseURL))

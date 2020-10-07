@@ -6,4 +6,5 @@ const (
 	channelResponse
 	ephemeralResponse
 	directMessageResponse
+  deleteInstance
 )
