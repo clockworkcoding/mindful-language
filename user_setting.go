@@ -28,8 +28,13 @@ func handleUserSettingAction(payload slack.InteractionCallback) {
 	directMessageBtn := slack.NewButtonBlockElement(strconv.Itoa(directMessageResponse), action.Value, directMessageBtnTxt)
 	noneBtnTxt := slack.NewTextBlockObject("plain_text", "don't show", false, false)
 	noneBtn := slack.NewButtonBlockElement(strconv.Itoa(noResponse), action.Value, noneBtnTxt)
+	noneBtnTxt := slack.NewTextBlockObject("plain_text", "don't show", false, false)
+	noneBtn := slack.NewButtonBlockElement(strconv.Itoa(noResponse), action.Value, noneBtnTxt)
 	buttons := slack.NewActionBlock("user_setting_selection", channelBtn, ephemeralBtn, threadBtn, directMessageBtn, noneBtn)
-
+  if paylod.User.ID == "DG5DH1EFM"{
+	  deleteBtnTxt := slack.NewTextBlockObject("plain_text", "don't show", false, false)
+	  deleteBtn := slack.NewButtonBlockElement(strconv.Itoa(threadResponse), action.Value, deleteBtnTxt)
+  }
 	blocks := slack.MsgOptionBlocks(headerSection, buttons)
 	options := []slack.MsgOption{blocks}
 	if payload.Message.ThreadTimestamp != "" {
