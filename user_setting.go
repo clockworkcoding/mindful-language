@@ -29,8 +29,8 @@ func handleUserSettingAction(payload slack.InteractionCallback) {
 	noneBtnTxt := slack.NewTextBlockObject("plain_text", "don't show", false, false)
 	noneBtn := slack.NewButtonBlockElement(strconv.Itoa(noResponse), action.Value, noneBtnTxt)
 	buttons := slack.NewActionBlock("user_setting_selection", channelBtn, ephemeralBtn, threadBtn, directMessageBtn, noneBtn)
- log.Println("UserId: ", payload.Message.User)
-  if payload.User.ID == payload.Message.User {
+ log.Println("UserId: ", payload)
+  if payload.User.ID == "UG5DH19EX"{
 	  deleteBtnTxt := slack.NewTextBlockObject("plain_text", "delete this instance", false, false)
     deleteBtn := slack.NewButtonBlockElement(strconv.Itoa(deleteInstance), payload.ResponseURL, deleteBtnTxt)
 	  buttons = slack.NewActionBlock("user_setting_selection", channelBtn, ephemeralBtn, threadBtn, directMessageBtn, noneBtn, deleteBtn)
