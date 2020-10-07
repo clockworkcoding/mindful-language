@@ -29,10 +29,10 @@ func handleUserSettingAction(payload slack.InteractionCallback) {
 	noneBtnTxt := slack.NewTextBlockObject("plain_text", "don't show", false, false)
 	noneBtn := slack.NewButtonBlockElement(strconv.Itoa(noResponse), action.Value, noneBtnTxt)
 	buttons := slack.NewActionBlock("user_setting_selection", channelBtn, ephemeralBtn, threadBtn, directMessageBtn, noneBtn)
- log.Println("UserId: ", payload.User.ID)
-  if payload.User.ID == "UG5DH19EX"{
+ log.Println("UserId: ", payload.Message.User)
+  if payload.User.ID == payload.Message.User {
 	  deleteBtnTxt := slack.NewTextBlockObject("plain_text", "delete this instance", false, false)
-	  deleteBtn := slack.NewButtonBlockElement(deleteInstance, payload.ResponseURL, deleteBtnTxt)
+    deleteBtn := slack.NewButtonBlockElement(strconv.Itoa(deleteInstance), payload.ResponseURL, deleteBtnTxt)
 	  buttons = slack.NewActionBlock("user_setting_selection", channelBtn, ephemeralBtn, threadBtn, directMessageBtn, noneBtn, deleteBtn)
   }
 	blocks := slack.MsgOptionBlocks(headerSection, buttons)
@@ -51,20 +51,27 @@ func handleUserSettingAction(payload slack.InteractionCallback) {
 func handleUserSettingSelection(payload slack.InteractionCallback) {
 	action := payload.ActionCallback.BlockActions[0]
 	responseType, _ := strconv.Atoi(action.ActionID)
+  if responseType == deleteInstance{
+
+    _, err := api.PostEphemeral(payload.Container.ChannelID, payload.User.ID, slack.MsgOptionText(":heavy_check_mark:", false), slack.MsgOptionDeleteOriginal(payload.ResponseURL))
+    if err != nil {
+      log.Println("Error posting: ", err)
+      return
+	  }
+	  _, err = api.PostEphemeral(payload.Container.ChannelID, payload.User.ID, slack.MsgOptionText(":heavy_check_mark:", false), slack.MsgOptionDeleteOriginal(action.Value))
+	  if err != nil {
+		  log.Println("Error posting: ", err)
+		  return
+	  }
+    return
+  }
 	triggerID, _ := strconv.Atoi(action.Value)
 	setting := userSetting{
 		ResponseType: responseType,
 		TriggerID:    triggerID,
 		UserID:       payload.User.ID,
 	}
-  if responseType == deleteInstance{
-    
-	_, err := api.PostEphemeral(payload.Container.ChannelID, payload.User.ID, slack.MsgOptionText(":heavy_check_mark:", false), slack.MsgOptionDeleteOriginal(payload.ResponseURL))
-	if err != nil {
-		log.Println("Error posting: ", err)
-		return
-	}
-  }
+  
 	insertUserSetting(setting)
 
 	_, err := api.PostEphemeral(payload.Container.ChannelID, payload.User.ID, slack.MsgOptionText(":heavy_check_mark:", false), slack.MsgOptionDeleteOriginal(payload.ResponseURL))
